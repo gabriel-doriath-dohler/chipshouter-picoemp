@@ -68,7 +68,7 @@ void fast_trigger() {
     if (offset == 0xFFFFFFFF) { // Only load the program once
         offset = pio_add_program(pio, &trigger_basic_program);
     }
-    
+
     // Find a free state machine on our chosen PIO (erroring if there are
     // none). Configure it to run our program, and start it, using the
     // helper function we included in our .pio file.
@@ -199,6 +199,6 @@ int main() {
             disarm();
         }
     }
-    
+
     return 0;
 }

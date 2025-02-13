@@ -51,32 +51,33 @@ void print_status(uint32_t status) {
     bool charged = (status >> 1) & 1;
     bool timeout_active = (status >> 2) & 1;
     bool hvp_mode = (status >> 3) & 1;
-    printf("Status:\n");
+    printf("inter: Status:\n");
     if(armed) {
-        printf("- Armed\n");
+        printf("inter: - Armed\n");
     } else {
-        printf("- Disarmed\n");
+        printf("inter: - Disarmed\n");
     }
     if(charged) {
-        printf("- Charged\n");
+        printf("inter: - Charged\n");
     } else {
-        printf("- Not charged\n");
+        printf("inter: - Not charged\n");
     }
     if(timeout_active) {
-        printf("- Timeout active\n");
+        printf("inter: - Timeout active\n");
     } else {
-        printf("- Timeout disabled\n");
+        printf("inter: - Timeout disabled\n");
     }
     if(hvp_mode) {
-        printf("- HVP internal\n");
+        printf("inter: - HVP internal\n");
     } else {
-        printf("- HVP external\n");
+        printf("inter: - HVP external\n");
     }
+    printf("result: End of status\n");
 }
 
 bool handle_command(char *command) {
     if (command[0] == 0 && last_command[0] != 0) {
-        printf("Repeat previous command (%s)\n", last_command);
+        printf("inter: Repeat previous command (%s)\n", last_command);
         return handle_command(last_command);
     } else {
         strcpy(last_command, command);
@@ -89,9 +90,9 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_arm);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Device armed!\n");
+            printf("result: Device armed!\n");
         } else {
-            printf("Arming failed!\n");
+            printf("error: Arming failed!\n");
         }
         return true;
     }
@@ -99,9 +100,9 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_disarm);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Device disarmed!\n");
+            printf("result: Device disarmed!\n");
         } else {
-            printf("Disarming failed!\n");
+            printf("error: Disarming failed!\n");
         }
         return true;
     }
@@ -109,9 +110,24 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_pulse);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Pulsed!\n");
+            printf("result: Pulsed!\n");
         } else {
-            printf("Pulse failed!\n");
+            printf("error: Pulse failed!\n");
+        }
+        return true;
+    }
+    if(strcmp(command, "ch") == 0 || strcmp(command, "charge") == 0) {
+        multicore_fifo_push_blocking(cmd_status);
+        uint32_t result = multicore_fifo_pop_blocking();
+        if(result == return_ok) {
+            bool charged = (multicore_fifo_pop_blocking() >> 1) & 1;
+            if(charged) {
+                printf("result: charged\n");
+            } else {
+                printf("result: not charged\n");
+            }
+        } else {
+            printf("error: Getting charge status failed!\n");
         }
         return true;
     }
@@ -121,7 +137,7 @@ bool handle_command(char *command) {
         if(result == return_ok) {
             print_status(multicore_fifo_pop_blocking());
         } else {
-            printf("Getting status failed!\n");
+            printf("error: Getting status failed!\n");
         }
         return true;
     }
@@ -129,9 +145,9 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_enable_timeout);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Timeout enabled!\n");
+            printf("result: Timeout enabled!\n");
         } else {
-            printf("Enabling timeout failed!\n");
+            printf("error: Enabling timeout failed!\n");
         }
         return true;
     }
@@ -139,9 +155,9 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_disable_timeout);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Timeout disabled!\n");
+            printf("result: Timeout disabled!\n");
         } else {
-            printf("Disabling timeout failed!\n");
+            printf("error: Disabling timeout failed!\n");
         }
         return true;
     }
@@ -149,35 +165,35 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_fast_trigger);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Fast trigger active...\n");
+            printf("result: Fast trigger active...\n");
             multicore_fifo_pop_blocking();
-            printf("Triggered!\n");
+            printf("inter: Triggered!\n");
         } else {
-            printf("Setting up fast trigger failed.");
+            printf("error: Setting up fast trigger failed.\n");
         }
         return true;
     }
     if(strcmp(command, "fa") == 0 || strcmp(command, "fast_trigger_configure") == 0) {
         char **unused;
-        printf(" configure in cycles\n");
-        printf("  1 cycle = 8ns\n");
-        printf("  1us = 125 cycles\n");
-        printf("  1ms = 125000 cycles\n");
-        printf("  max = MAX_UINT32 = 4294967295 cycles = 34359ms\n");
+        printf("inter: configure in cycles\n");
+        printf("inter: 1 cycle = 8ns\n");
+        printf("inter: 1us = 125 cycles\n");
+        printf("inter: 1ms = 125000 cycles\n");
+        printf("inter: max = MAX_UINT32 = 4294967295 cycles = 34359ms\n");
 
-        printf(" pulse_delay_cycles (current: %d, default: %d)?\n> ", pulse_delay_cycles, PULSE_DELAY_CYCLES_DEFAULT);
+        printf("inter: pulse_delay_cycles (current: %d, default: %d)?> \n", pulse_delay_cycles, PULSE_DELAY_CYCLES_DEFAULT);
         read_line();
-        printf("\n");
+        printf("inter: \n");
         if (serial_buffer[0] == 0)
-            printf("Using default\n");
+            printf("inter: Using default\n");
         else
             pulse_delay_cycles = strtoul(serial_buffer, unused, 10);
-        
-        printf(" pulse_time_cycles (current: %d, default: %d)?\n> ", pulse_time_cycles, PULSE_TIME_CYCLES_DEFAULT);
+
+        printf("inter: pulse_time_cycles (current: %d, default: %d)?> \n", pulse_time_cycles, PULSE_TIME_CYCLES_DEFAULT);
         read_line();
         printf("\n");
         if (serial_buffer[0] == 0)
-            printf("Using default\n");
+            printf("inter: Using default\n");
         else
             pulse_time_cycles = strtoul(serial_buffer, unused, 10);
 
@@ -185,17 +201,17 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(pulse_delay_cycles);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result != return_ok) {
-            printf("Config pulse_delay_cycles failed.");
+            printf("inter: Config pulse_delay_cycles failed.\n");
         }
 
         multicore_fifo_push_blocking(cmd_config_pulse_time_cycles);
         multicore_fifo_push_blocking(pulse_time_cycles);
         result = multicore_fifo_pop_blocking();
         if(result != return_ok) {
-            printf("Config pulse_time_cycles failed.");
+            printf("inter: Config pulse_time_cycles failed.\n");
         }
 
-        printf("pulse_delay_cycles=%d, pulse_time_cycles=%d\n", pulse_delay_cycles, pulse_time_cycles);
+        printf("result: pulse_delay_cycles=%d, pulse_time_cycles=%d\n", pulse_delay_cycles, pulse_time_cycles);
 
         return true;
     }
@@ -203,9 +219,9 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_internal_hvp);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("Internal HVP mode active!\n");
+            printf("result: Internal HVP mode active!\n");
         } else {
-            printf("Setting up internal HVP mode failed.");
+            printf("error: Setting up internal HVP mode failed.\n");
         }
         return true;
     }
@@ -213,28 +229,28 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(cmd_external_hvp);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
-            printf("External HVP mode active!\n");
+            printf("result: External HVP mode active!\n");
         } else {
-            printf("Setting up external HVP mode failed.");
+            printf("error: Setting up external HVP mode failed.\n");
         }
         return true;
     }
 
     if(strcmp(command, "c") == 0 || strcmp(command, "configure") == 0) {
         char **unused;
-        printf(" pulse_time (current: %d, default: %d)?\n> ", pulse_time, PULSE_TIME_US_DEFAULT);
+        printf("inter: pulse_time (current: %d, default: %d)?> \n", pulse_time, PULSE_TIME_US_DEFAULT);
         read_line();
-        printf("\n");
+        printf("inter: \n");
         if (serial_buffer[0] == 0)
-            printf("Using default\n");
+            printf("inter: Using default\n");
         else
             pulse_time = strtoul(serial_buffer, unused, 10);
 
-        printf(" pulse_power (current: %f, default: %f)?\n> ", pulse_power.f, PULSE_POWER_DEFAULT);
+        printf("inter: pulse_power (current: %f, default: %f)?> \n", pulse_power.f, PULSE_POWER_DEFAULT);
         read_line();
-        printf("\n");
+        printf("inter: \n");
         if (serial_buffer[0] == 0)
-            printf("Using default");
+            printf("inter: Using default\n");
         else
             pulse_power.f = strtof(serial_buffer, unused);
 
@@ -242,27 +258,29 @@ bool handle_command(char *command) {
         multicore_fifo_push_blocking(pulse_time);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result != return_ok) {
-            printf("Config pulse_time failed.");
+            printf("inter: Config pulse_time failed.\n");
         }
 
         multicore_fifo_push_blocking(cmd_config_pulse_power);
         multicore_fifo_push_blocking(pulse_power.ui32);
         result = multicore_fifo_pop_blocking();
         if(result != return_ok) {
-            printf("Config pulse_power failed.");
+            printf("inter: Config pulse_power failed.\n");
         }
 
-        printf("pulse_time=%d, pulse_power=%f\n", pulse_time, pulse_power.f);
+        printf("result: pulse_time=%d, pulse_power=%f\n", pulse_time, pulse_power.f);
 
         return true;
     }
 
     if(strcmp(command, "t") == 0 || strcmp(command, "toggle_gp1") == 0) {
         multicore_fifo_push_blocking(cmd_toggle_gp1);
-        
+
         uint32_t result = multicore_fifo_pop_blocking();
         if(result != return_ok) {
-            printf("target_reset failed.");
+            printf("error: target_reset failed.\n");
+        } else {
+            printf("result: success\n");
         }
 
         return true;
@@ -285,34 +303,33 @@ void serial_console() {
     pulse_power.f = PULSE_POWER_DEFAULT;
     pulse_delay_cycles = PULSE_DELAY_CYCLES_DEFAULT;
     pulse_time_cycles = PULSE_TIME_CYCLES_DEFAULT;
-    
+
     while(1) {
         read_line();
-        printf("\n");
+        printf("inter:\n");
         if(!handle_command(serial_buffer)) {
-            printf("PicoEMP Commands:\n");
-            printf("- <empty to repeat last command>\n");
-            printf("- [h]elp\n");
-            printf("- [a]rm\n");
-            printf("- [d]isarm\n");
-            printf("- [p]ulse\n");
-            printf("- [en]able_timeout\n");
-            printf("- [di]sable_timeout\n");
-            printf("- [f]ast_trigger\n");
-            printf("- [fa]st_trigger_configure: delay_cycles=%d, time_cycles=%d\n", pulse_delay_cycles, pulse_time_cycles);
-            printf("- [in]ternal_hvp\n");
-            printf("- [ex]ternal_hvp\n");
-            printf("- [c]onfigure: pulse_time=%d, pulse_power=%f\n", pulse_time, pulse_power.f);
-            printf("- [t]oggle_gp1\n");
-            printf("- [s]tatus\n");
-            printf("- [r]eset\n");
+            printf("result: PicoEMP Commands:\n");
+            printf("inter: - <empty to repeat last command>\n");
+            printf("inter: - [h]elp\n");
+            printf("inter: - [a]rm\n");
+            printf("inter: - [d]isarm\n");
+            printf("inter: - [p]ulse\n");
+            printf("inter: - [en]able_timeout\n");
+            printf("inter: - [di]sable_timeout\n");
+            printf("inter: - [f]ast_trigger\n");
+            printf("inter: - [fa]st_trigger_configure: delay_cycles=%d, time_cycles=%d\n", pulse_delay_cycles, pulse_time_cycles);
+            printf("inter: - [in]ternal_hvp\n");
+            printf("inter: - [ex]ternal_hvp\n");
+            printf("inter: - [c]onfigure: pulse_time=%d, pulse_power=%f\n", pulse_time, pulse_power.f);
+            printf("inter: - [t]oggle_gp1\n");
+            printf("inter: - [s]tatus\n");
+            printf("inter: - [r]eset\n");
         }
-        printf("\n");
-        
+
         if (last_command[0] != 0) {
-            printf("[%s] > ", last_command);
+            printf("inter: [%s] > \n", last_command);
         } else {
-            printf(" > ");
+            printf("inter: > \n");
         }
     }
 }

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
 project(picoemp)
- 
+
 pico_sdk_init()
 
 add_executable(picoemp)

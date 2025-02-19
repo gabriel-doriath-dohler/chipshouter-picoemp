@@ -181,6 +181,7 @@ bool handle_command(char *command) {
         printf("max = MAX_UINT32 = 4294967295 cycles = 34359ms\n");
 
         printf("pulse_delay_cycles (current: %d, default: %d)?> \n", pulse_delay_cycles, PULSE_DELAY_CYCLES_DEFAULT);
+        printf("end\n");
         read_line();
         printf("\n");
         if (serial_buffer[0] == 0)
@@ -189,6 +190,7 @@ bool handle_command(char *command) {
             pulse_delay_cycles = strtoul(serial_buffer, unused, 10);
 
         printf("pulse_time_cycles (current: %d, default: %d)?> \n", pulse_time_cycles, PULSE_TIME_CYCLES_DEFAULT);
+        printf("end\n");
         read_line();
         printf("\n");
         if (serial_buffer[0] == 0)
@@ -238,6 +240,7 @@ bool handle_command(char *command) {
     if(strcmp(command, "c") == 0 || strcmp(command, "configure") == 0) {
         char **unused;
         printf("pulse_time (current: %d, default: %d)?> \n", pulse_time, PULSE_TIME_US_DEFAULT);
+        printf("end\n");
         read_line();
         printf("\n");
         if (serial_buffer[0] == 0)
@@ -246,6 +249,7 @@ bool handle_command(char *command) {
             pulse_time = strtoul(serial_buffer, unused, 10);
 
         printf("pulse_power (current: %f, default: %f)?> \n", pulse_power.f, PULSE_POWER_DEFAULT);
+        printf("end\n");
         read_line();
         printf("\n");
         if (serial_buffer[0] == 0)

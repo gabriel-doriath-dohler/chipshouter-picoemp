@@ -19,6 +19,7 @@ static uint32_t pulse_time;
 static uint32_t pulse_delay_cycles;
 static uint32_t pulse_time_cycles;
 static union float_union {float f; uint32_t ui32;} pulse_power;
+static bool cmd_is_fast_trigger;
 
 void read_line() {
     memset(serial_buffer, 0, sizeof(serial_buffer));
@@ -161,14 +162,17 @@ bool handle_command(char *command) {
         return true;
     }
     if(strcmp(command, "f") == 0 || strcmp(command, "fast_trigger") == 0) {
+        cmd_is_fast_trigger = true; // Prevent duplicate "end"
         multicore_fifo_push_blocking(cmd_fast_trigger);
         uint32_t result = multicore_fifo_pop_blocking();
         if(result == return_ok) {
             printf("Fast trigger active...\n");
+            printf("end\n");
             multicore_fifo_pop_blocking();
-            printf("Triggered!\n");
+            // printf("Triggered!\n");
         } else {
             printf("error: Setting up fast trigger failed.\n");
+            printf("end\n");
         }
         return true;
     }
@@ -306,6 +310,7 @@ void serial_console() {
     pulse_time_cycles = PULSE_TIME_CYCLES_DEFAULT;
 
     while(1) {
+        cmd_is_fast_trigger = false;
         read_line();
         printf("\n");
         if(!handle_command(serial_buffer)) {
@@ -334,6 +339,8 @@ void serial_console() {
             printf("> \n");
         }
 
-        printf("end\n");
+        if (!cmd_is_fast_trigger) {
+          printf("end\n");
+        }
     }
 }
